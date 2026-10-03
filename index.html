@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#081a15" />
-<title>Novo Poker — One Box</title>
+<title>Novo Poker</title>
 <style>
   :root{
     --bg:#06130f;--felt:#0b4a36;--felt2:#083b2d;--line:rgba(255,255,255,.12);
@@ -124,10 +124,54 @@
   .app.short-height .minirow .btn{min-height:31px;font-size:10px}
   .app.short-height details,.app.short-height .foot{display:none}
   @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
-</style>
+  .app{max-width:540px;padding-bottom:12px}
+  .dealer,.app.compact-height .dealer,.app.short-height .dealer{min-height:0}
+  .dealer .cards{min-height:0;padding:4px 2px 6px}
+  .dealer .card{flex:0 1 48px}
+  .dealer .rank{font-size:26px}
+  .dealer .hand-name{height:0}
+  .table{padding:14px 10px 10px;border-radius:25px}
+  .divider{margin:10px 15px}
+  .box-stack{position:relative;z-index:1;display:grid;gap:8px}
+  .box-row{background:rgba(2,24,17,.38);border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:9px 10px;scroll-margin-bottom:190px}
+  .box-row.active{border-color:var(--gold2);box-shadow:inset 0 0 0 1px rgba(255,217,120,.3);background:rgba(226,182,80,.07)}
+  .box-header{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;letter-spacing:.08em}
+  .box-header button{border:0;background:none;padding:4px 0;color:var(--text);font-weight:900;cursor:pointer;min-height:28px}
+  .box-status{font-size:10px;color:var(--muted);letter-spacing:.03em}
+  .active .box-status{color:var(--gold2)}
+  .box-row .cards,.app.compact-height .box-row .cards,.app.short-height .box-row .cards{min-height:0;padding:9px 0 6px;gap:7px}
+  .box-row .card,.app.compact-height .box-row .card,.app.short-height .box-row .card{flex:0 1 51px;width:51px}
+  .box-row .rank{font-size:28px}
+  .box-row .suit-corner{font-size:15px;left:4px;top:4px}
+  .box-row .suit-corner.bottom{left:auto;top:auto;right:4px;bottom:4px}
+  .box-row .card.selected{transform:translateY(-5px)}
+  .box-footer{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px}
+  .box-footer b{color:var(--gold2);font-size:12px}
+  .box-stakes{color:#b7c9c1;font-size:10px}
+  .action-dock,.app.compact-height .action-dock,.app.short-height .action-dock{position:sticky;bottom:0;z-index:20;background:#0a1d16f5;backdrop-filter:blur(12px);border-color:#526044;padding:10px 12px calc(10px + env(safe-area-inset-bottom));margin-top:10px;border-radius:18px 18px 0 0}
+  .control-heading{display:flex;justify-content:space-between;align-items:center;font-size:11px;gap:8px}
+  .control-heading b{color:var(--gold2);letter-spacing:.08em}
+  .control-heading span{color:var(--muted)}
+  .action-dock .btn,.app.short-height .action-dock .btn{min-height:44px}
+  .action-dock .minirow .btn{font-size:11px}
+  .message,.app.compact-height .message,.app.short-height .message{min-height:32px;font-size:11px;margin-top:8px;padding:6px}
+  .preview-note{text-align:center;color:var(--muted);font-size:10px;margin:8px 0}
+  .restart{width:100%;margin-top:8px}
+  [hidden]{display:none!important}
+
+ .startup{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#04100deF;padding:20px}
+ .startup-card{width:100%;max-width:380px;text-align:center;background:#0c291e;border:1px solid #6d653c;border-radius:24px;padding:28px 22px;box-shadow:var(--shadow)}
+ .startup h1{font-size:25px;margin:14px 0 8px}.startup p{color:var(--muted);font-size:13px;line-height:1.6}
+ .box-choice{display:flex;gap:10px;margin:24px 0 16px}.box-choice .btn{flex:1;font-size:20px;min-height:62px}
+ .box-choice .active{border-color:var(--gold2);background:#705a24}.start-button{width:100%}
+ .setup-caption{font-size:11px;color:var(--muted);margin-top:8px}
+ .box-row.empty .cards{min-height:65px;color:var(--muted);font-size:12px}
+ .box-row.loss .box-status{color:#ffc2c2}.box-row.win .box-status{color:var(--gold2)}
+ .action-dock details{max-height:30vh;overflow:auto}
+ </style>
 </head>
 <body>
-<main class="app" id="app">
+<div class="startup" id="startup"><section class="startup-card" role="dialog" aria-modal="true" aria-labelledby="startupTitle"><div class="brand">NOVO POKER</div><h1 id="startupTitle">How many boxes?</h1><p>Play up to three hands against one dealer.<br>Choose once, then keep playing.</p><div class="box-choice" id="boxChoice"><button class="btn active" data-count="1" aria-pressed="true">1</button><button class="btn" data-count="2" aria-pressed="false">2</button><button class="btn" data-count="3" aria-pressed="false">3</button></div><button class="btn primary start-button" id="startGame">PLAY WITH 1 BOX</button><p>Refresh to pick a different number.</p></section></div><main class="app" id="app" inert>
   <header class="topbar">
     <div class="brand">NOVO POKER</div>
     <div class="bank"><div class="value"><small>Bankroll</small><span id="bankroll">1,000</span></div></div>
@@ -143,25 +187,16 @@
 
     <div class="divider"></div>
 
-    <div class="zone player">
-      <div class="zone-label">Box 1</div>
-      <div class="cards" id="playerCards"></div>
-      <div class="hand-name" id="playerHand"></div>
-      <div class="hint" id="playerHint">Choose an Ante and deal.</div>
-      <div class="stakes">
-        <span class="stake">ANTE <b id="anteDisplay">—</b></span>
-        <span class="stake">BET <b id="betDisplay">—</b></span>
-        <span class="stake">DRAW/6TH <b id="feeDisplay">—</b></span>
-      </div>
-    </div>
-
+    <div class="box-stack" id="boxStack"></div>
     <div class="message" id="message" aria-live="polite">Place your Ante.</div>
   </section>
 
-  <section class="panel">
+  <section class="panel action-dock">
+    <div class="control-heading"><b id="controlTitle">PLACE YOUR ANTE</b><span id="controlHint"></span></div>
     <div id="bettingControls">
+      <div class="setup-caption" id="setupCaption"></div>
       <div class="setup">
-        <div class="setup-title">Ante</div>
+        <div class="setup-title">Ante per box</div>
         <div class="chips" id="chips">
           <button class="chip active" type="button" data-ante="10">10</button>
           <button class="chip" type="button" data-ante="25">25</button>
@@ -176,7 +211,7 @@
     </div>
 
     <div id="decisionControls" hidden>
-      <div class="actions three">
+      <div class="actions">
         <button class="btn danger" type="button" id="foldBtn">FOLD</button>
         <button class="btn" type="button" id="drawBtn" disabled>DRAW SELECTED</button>
         <button class="btn" type="button" id="sixthBtn">BUY 6TH</button>
@@ -209,17 +244,14 @@
       <div style="margin-top:7px">MVP simplifications: no Bonus, Insurance, dealer-game purchase, or second-combination payout.</div>
     </details>
   </section>
-  <div class="foot">Offline single-file practice game. Box logic is stored independently so additional boxes can be added later.</div>
+  <div class="foot">Offline practice game · Shared deck and dealer · Refresh to choose your box count again.</div>
 </main>
 
 <script>
 (() => {
-  'use strict';
-  const root = document.getElementById('app');
-  if (root.dataset.ready) return;
-  root.dataset.ready = '1';
-
-  const SUITS = [
+ 'use strict';
+ const $=id=>document.getElementById(id),root=$('app');
+   const SUITS = [
     {id:'S', symbol:'♠', red:false}, {id:'H', symbol:'♥', red:true},
     {id:'D', symbol:'♦', red:true}, {id:'C', symbol:'♣', red:false}
   ];
@@ -239,104 +271,21 @@
     draw(){ return this.cards.pop(); }
   }
 
-  class BoxState {
-    constructor(id){ this.id=id; this.hand=[]; this.ante=0; this.bet=0; this.fee=0; this.selected=new Set(); this.modified=false; this.folded=false; }
-    reset(ante){ this.hand=[]; this.ante=ante; this.bet=0; this.fee=0; this.selected.clear(); this.modified=false; this.folded=false; }
-  }
 
-  const state = {
-    bankroll:1000, selectedAnte:10, deck:new Deck(), dealer:[], dealerUpIndex:4,
-    boxes:[new BoxState(1)], phase:'betting', busy:false
-  };
-  const box = () => state.boxes[0];
-
-  const $ = id => document.getElementById(id);
-  const el = {
-    bankroll:$('bankroll'), dealerCards:$('dealerCards'), playerCards:$('playerCards'), dealerHand:$('dealerHand'), playerHand:$('playerHand'),
-    dealerHint:$('dealerHint'), playerHint:$('playerHint'), message:$('message'), anteDisplay:$('anteDisplay'), betDisplay:$('betDisplay'), feeDisplay:$('feeDisplay'),
-    betting:$('bettingControls'), decision:$('decisionControls'), postDraw:$('postDrawControls'), round:$('roundControls'),
-    deal:$('dealBtn'), resetBank:$('resetBankBtn'), fold:$('foldBtn'), draw:$('drawBtn'), sixth:$('sixthBtn'), bet:$('betBtn'), sort:$('sortBtn'), clear:$('clearBtn'),
-    foldAfter:$('foldAfterBtn'), betAfter:$('betAfterBtn'), sortAfter:$('sortAfterBtn'), newHand:$('newHandBtn'), chips:$('chips')
-  };
-
-  function money(n){ return Math.round(n).toLocaleString(); }
-  function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-  function setBusy(v){ state.busy=v; syncControls(); }
-  function syncControls(){
-    const b=box(), ante=b.ante || state.selectedAnte;
-    el.deal.disabled=state.busy || state.phase!=='betting' || !canAfford(state.selectedAnte);
-    el.resetBank.disabled=state.busy;
-    el.fold.disabled=state.busy || state.phase!=='decision';
-    el.bet.disabled=state.busy || state.phase!=='decision' || !canAfford(ante*2);
-    el.sixth.disabled=state.busy || state.phase!=='decision' || b.modified || !canAfford(ante);
-    el.sort.disabled=state.busy || state.phase!=='decision';
-    el.clear.disabled=state.busy || state.phase!=='decision';
-    el.foldAfter.disabled=state.busy || state.phase!=='postDraw';
-    el.betAfter.disabled=state.busy || state.phase!=='postDraw' || !canAfford(ante*2);
-    el.sortAfter.disabled=state.busy || state.phase!=='postDraw';
-    el.newHand.disabled=state.busy || state.phase!=='round';
-    updateDrawButton();
-  }
-  function msg(text,kind=''){ el.message.textContent=text; el.message.className=`message ${kind}`.trim(); }
-  function updateMoney(){ el.bankroll.textContent=money(state.bankroll); el.anteDisplay.textContent=box().ante?money(box().ante):'—'; el.betDisplay.textContent=box().bet?money(box().bet):'—'; el.feeDisplay.textContent=box().fee?money(box().fee):'—'; }
-  function showControls(which){ el.betting.hidden=which!=='betting'; el.decision.hidden=which!=='decision'; el.postDraw.hidden=which!=='postDraw'; el.round.hidden=which!=='round'; state.phase=which; syncControls(); }
-  function canAfford(n){ return state.bankroll>=n; }
-
-  function cardHTML(c,down=false,selectable=false,selected=false,index=0){
-    const classes=['card']; if(down) classes.push('face-down'); if(selectable) classes.push('selectable'); if(selected) classes.push('selected');
-    return `<button type="button" class="${classes.join(' ')}" data-index="${index}" ${selectable?'aria-label="Select '+c.label+c.symbol+' for draw"':'tabindex="-1"'}><span class="card-inner"><span class="face front suit-${c.suit}"><span class="suit-corner">${c.symbol}</span><span class="rank">${c.label}</span><span class="suit-corner bottom">${c.symbol}</span></span><span class="face back"></span></span></button>`;
-  }
-
-  function renderCards(revealDealer=false){
-    el.dealerCards.innerHTML=state.dealer.map((c,i)=>cardHTML(c,!revealDealer && i!==state.dealerUpIndex,false,false,i)).join('');
-    const selectable=state.phase==='decision' && !box().modified;
-    el.playerCards.innerHTML=box().hand.map((c,i)=>cardHTML(c,false,selectable,box().selected.has(i),i)).join('');
-    if(selectable){
-      el.playerCards.querySelectorAll('.card').forEach(btn=>btn.addEventListener('click',()=>toggleCard(Number(btn.dataset.index))));
-    }
-    updateLabels(revealDealer);
-  }
-
-  async function animateDealIn(node, delay=0, duration=330){
-    if(!node) return;
-    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    node.style.opacity='0';
-    await sleep(delay);
-    const tableRect=root.querySelector('.table').getBoundingClientRect();
-    const cardRect=node.getBoundingClientRect();
-    // Invisible dealing point: top-right inside the felt. No deck element is rendered.
-    const sourceX=tableRect.right-26;
-    const sourceY=tableRect.top+18;
-    const dx=sourceX-(cardRect.left+cardRect.width/2);
-    const dy=sourceY-(cardRect.top+cardRect.height/2);
-    node.style.zIndex='8';
-    const anim=node.animate([
-      {transform:`translate(${dx}px, ${dy}px) rotate(11deg) scale(.70)`,opacity:.12},
-      {offset:.72,transform:'translate(-2px, 2px) rotate(-1deg) scale(1.015)',opacity:1},
-      {transform:'translate(0, 0) rotate(0deg) scale(1)',opacity:1}
-    ],{duration,easing:'cubic-bezier(.16,.82,.24,1)',fill:'forwards'});
-    await anim.finished.catch(()=>{});
-    node.style.opacity='1';
-    node.style.zIndex='';
-    anim.cancel();
-  }
-
-  async function animateInitialDeal(){
-    const p=[...el.playerCards.children], d=[...el.dealerCards.children];
-    const jobs=[];
-    let step=0;
-    for(let i=0;i<5;i++){
-      jobs.push(animateDealIn(p[i],step++*72,300));
-      jobs.push(animateDealIn(d[i],step++*72,300));
-    }
-    await Promise.all(jobs);
-  }
-
-  function sortHand(){ box().hand.sort((a,b)=>b.rank-a.rank || a.suit.localeCompare(b.suit)); box().selected.clear(); renderCards(false); updateDrawButton(); }
-  function toggleCard(i){ if(state.busy || state.phase!=='decision' || box().modified) return; box().selected.has(i)?box().selected.delete(i):box().selected.add(i); renderCards(false); updateDrawButton(); }
-  function updateDrawButton(){ if(!el.draw) return; const n=box().selected.size; el.draw.textContent=n?`DRAW ${n} CARD${n>1?'S':''}`:'DRAW SELECTED'; el.draw.disabled=state.busy || state.phase!=='decision' || n<1 || n>5 || !canAfford(box().ante); }
-
-  function combinations(arr,k){
+ class BoxState {
+  constructor(id){this.id=id;this.hand=[];this.ante=0;this.bet=0;this.fee=0;this.selected=new Set();this.modified=false;this.status='empty';this.result='';this.kind='';this.net=0;}
+ }
+ const state={bankroll:1000,selectedAnte:10,count:1,boxes:[new BoxState(1)],active:0,deck:new Deck(),dealer:[],dealerUpIndex:4,phase:'startup',busy:false,roundStart:1000};
+ const box=()=>state.boxes[state.active];
+ const el={bankroll:$('bankroll'),dealerCards:$('dealerCards'),dealerHand:$('dealerHand'),dealerHint:$('dealerHint'),message:$('message'),deal:$('dealBtn'),draw:$('drawBtn')};
+ const money=n=>Math.round(n).toLocaleString();
+ const signed=n=>(n>0?'+':'')+money(n);
+ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+ const canAfford=n=>state.bankroll>=n;
+ const undecided=b=>b.status==='decision'||b.status==='postDraw';
+ function msg(text,kind=''){el.message.textContent=text;el.message.className='message '+kind;}
+ function setBusy(value){state.busy=value;syncControls();}
+   function combinations(arr,k){
     const out=[];
     function rec(start,pick){ if(pick.length===k){out.push(pick.slice());return;} for(let i=start;i<=arr.length-(k-pick.length);i++){pick.push(arr[i]);rec(i+1,pick);pick.pop();} }
     rec(0,[]); return out;
@@ -381,103 +330,134 @@
   function rankName(r){return r===14?'Ace':r===13?'King':r===12?'Queen':r===11?'Jack':String(r)}
   function dealerQualifies(e){ return e.category>=0; }
 
-  function updateLabels(revealDealer=false){
-    if(box().hand.length) el.playerHand.textContent=bestHand(box().hand).name; else el.playerHand.textContent='';
-    if(revealDealer && state.dealer.length) el.dealerHand.textContent=bestHand(state.dealer).name; else el.dealerHand.textContent='';
+
+   function cardHTML(c,down=false,selectable=false,selected=false,index=0){
+    const classes=['card']; if(down) classes.push('face-down'); if(selectable) classes.push('selectable'); if(selected) classes.push('selected');
+    return `<button type="button" class="${classes.join(' ')}" data-index="${index}" ${selectable?'aria-label="Select '+c.label+c.symbol+' for draw"':'tabindex="-1"'}><span class="card-inner"><span class="face front suit-${c.suit}"><span class="suit-corner">${c.symbol}</span><span class="rank">${c.label}</span><span class="suit-corner bottom">${c.symbol}</span></span><span class="face back"></span></span></button>`;
   }
 
-  async function deal(){
-    if(state.busy) return;
-    const ante=state.selectedAnte;
-    if(!canAfford(ante)){msg('Not enough bankroll for that Ante.','loss');return;}
-    setBusy(true);
-    state.deck.reset(); box().reset(ante); state.dealer=[]; state.bankroll-=ante; updateMoney();
-    for(let i=0;i<5;i++){ box().hand.push(state.deck.draw()); state.dealer.push(state.deck.draw()); }
-    showControls('decision'); renderCards(false);
-    el.playerHint.textContent='Tap cards to select them for a draw.'; el.dealerHint.textContent='One dealer card is exposed.';
-    msg('Dealing…');
-    await animateInitialDeal();
-    msg('Bet ×2, draw cards, buy a 6th card, or fold.');
-    setBusy(false);
+
+   async function animateDealIn(node, delay=0, duration=330){
+    if(!node) return;
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    node.style.opacity='0';
+    await sleep(delay);
+    const tableRect=root.querySelector('.table').getBoundingClientRect();
+    const cardRect=node.getBoundingClientRect();
+    // Invisible dealing point: top-right inside the felt. No deck element is rendered.
+    const sourceX=tableRect.right-26;
+    const sourceY=tableRect.top+18;
+    const dx=sourceX-(cardRect.left+cardRect.width/2);
+    const dy=sourceY-(cardRect.top+cardRect.height/2);
+    node.style.zIndex='8';
+    const anim=node.animate([
+      {transform:`translate(${dx}px, ${dy}px) rotate(11deg) scale(.70)`,opacity:.12},
+      {offset:.72,transform:'translate(-2px, 2px) rotate(-1deg) scale(1.015)',opacity:1},
+      {transform:'translate(0, 0) rotate(0deg) scale(1)',opacity:1}
+    ],{duration,easing:'cubic-bezier(.16,.82,.24,1)',fill:'forwards'});
+    await anim.finished.catch(()=>{});
+    node.style.opacity='1';
+    node.style.zIndex='';
+    anim.cancel();
   }
 
-  async function drawSelected(){
-    if(state.busy || box().modified) return;
-    const indices=[...box().selected].sort((a,b)=>a-b); if(!indices.length || !canAfford(box().ante)) return;
-    setBusy(true); state.bankroll-=box().ante; box().fee+=box().ante; box().modified=true; updateMoney();
-    const nodes=[...el.playerCards.children].filter((_,i)=>indices.includes(i)); nodes.forEach(n=>n.classList.add('replacing'));
-    await sleep(210);
-    indices.forEach(i=>box().hand[i]=state.deck.draw()); box().selected.clear();
-    renderCards(false);
-    const newNodes=[...el.playerCards.children].filter((_,i)=>indices.includes(i));
-    await Promise.all(newNodes.map((n,i)=>animateDealIn(n,i*75,290)));
-    el.playerHint.textContent='Draw complete. Bet ×2 or fold.'; msg(`Replaced ${indices.length} card${indices.length>1?'s':''} for ${money(box().ante)}.`);
-    showControls('postDraw'); setBusy(false);
-  }
 
-  async function buySixth(){
-    if(state.busy || box().modified || !canAfford(box().ante)) return;
-    setBusy(true); state.bankroll-=box().ante; box().fee+=box().ante; box().modified=true; box().selected.clear(); updateMoney();
-    box().hand.push(state.deck.draw()); renderCards(false); const n=el.playerCards.lastElementChild;
-    el.playerHint.textContent='Six cards: best five-card hand counts in this MVP.'; msg(`Bought a sixth card for ${money(box().ante)}.`); showControls('postDraw');
-    await animateDealIn(n,0,320); setBusy(false);
-  }
-
-  async function fold(){
-    if(state.busy) return; setBusy(true); box().folded=true; renderCards(true); showControls('round');
-    el.playerHint.textContent='Folded.'; el.dealerHint.textContent='Dealer hand shown for reference.'; msg(`Fold. You lose the Ante${box().fee?` and ${money(box().fee)} draw fee`:''}.`,'loss');
-    await sleep(300); setBusy(false);
-  }
-
-  async function placeBet(){
-    if(state.busy) return; const amount=box().ante*2; if(!canAfford(amount)){msg(`You need ${money(amount)} for the BET.`,'loss');return;}
-    setBusy(true); box().bet=amount; state.bankroll-=amount; updateMoney(); msg('Dealer reveals…');
-    const downs=[...el.dealerCards.children].filter((_,i)=>i!==state.dealerUpIndex); downs.forEach((n,i)=>setTimeout(()=>n.classList.remove('face-down'),i*100));
-    await sleep(520); resolveRound(); showControls('round'); setBusy(false);
-  }
-
-  function resolveRound(){
-    renderCards(true);
-    const p=bestHand(box().hand), d=bestHand(state.dealer); const cmp=compareEval(p,d);
-    el.dealerHint.textContent=dealerQualifies(d)?'Dealer qualifies.':'Dealer has NO GAME.';
-    el.playerHint.textContent=`Your best hand: ${p.name}.`;
-    if(!dealerQualifies(d)){
-      const returned=box().ante*2+box().bet; state.bankroll+=returned; updateMoney();
-      msg(`NO GAME — Ante wins ${money(box().ante)}; BET returned.`, 'win'); return;
-    }
-    if(cmp>0){
-      const profit=box().bet*p.payout; const returned=box().ante+box().bet+profit; state.bankroll+=returned; updateMoney();
-      msg(`${p.name} wins — BET pays ${p.payout}:1 (+${money(profit)}).`, 'win');
-    } else if(cmp===0){
-      state.bankroll+=box().ante+box().bet; updateMoney(); msg('STANDOFF — Ante and BET returned.', 'push');
-    } else {
-      updateMoney(); msg(`${d.name} beats ${p.name}. Ante and BET lose.`, 'loss');
-    }
-  }
-
-  function newHand(){
-    box().reset(0); state.dealer=[]; state.deck.reset(); showControls('betting'); renderCards(false); updateMoney();
-    el.playerHint.textContent='Choose an Ante and deal.'; el.dealerHint.textContent='Dealer qualifies with A-K or better'; msg('Place your Ante.');
-  }
-
-  el.chips.addEventListener('click',e=>{const b=e.target.closest('[data-ante]');if(!b||state.busy||state.phase!=='betting')return;state.selectedAnte=Number(b.dataset.ante);el.chips.querySelectorAll('.chip').forEach(x=>x.classList.toggle('active',x===b));});
-  el.deal.addEventListener('click',deal); el.resetBank.addEventListener('click',()=>{if(state.busy)return;state.bankroll=1000;updateMoney();msg('Bankroll reset to 1,000.');});
-  el.fold.addEventListener('click',fold); el.foldAfter.addEventListener('click',fold); el.bet.addEventListener('click',placeBet); el.betAfter.addEventListener('click',placeBet);
-  el.draw.addEventListener('click',drawSelected); el.sixth.addEventListener('click',buySixth); el.sort.addEventListener('click',sortHand); el.sortAfter.addEventListener('click',sortHand);
-  el.clear.addEventListener('click',()=>{box().selected.clear();renderCards(false);updateDrawButton();}); el.newHand.addEventListener('click',newHand);
-
-  function syncViewportHeight(){
-    const h=Math.round(window.visualViewport?.height || window.innerHeight || 800);
-    root.style.setProperty('--view-h',`${h}px`);
-    root.classList.toggle('compact-height',h<790);
-    root.classList.toggle('short-height',h<690);
-  }
-  syncViewportHeight();
-  window.addEventListener('resize',syncViewportHeight,{passive:true});
-  if(window.visualViewport) window.visualViewport.addEventListener('resize',syncViewportHeight,{passive:true});
-
-  updateMoney(); renderCards(false); showControls('betting'); syncControls();
+ function syncControls(){
+  const b=box(),playing=state.phase==='playing'&&undecided(b),locked=state.busy||!playing;
+  $('bettingControls').hidden=state.phase!=='betting';
+  $('decisionControls').hidden=!playing||b.modified;
+  $('postDrawControls').hidden=!playing||!b.modified;
+  $('roundControls').hidden=state.phase!=='round';
+  el.deal.disabled=state.busy||state.phase!=='betting'||!canAfford(state.count*state.selectedAnte);
+  el.deal.textContent='DEAL '+state.count+' BOX'+(state.count===1?'':'ES')+' · '+money(state.count*state.selectedAnte);
+  $('setupCaption').textContent=state.count+' box'+(state.count===1?'':'es')+' · Total ante '+money(state.count*state.selectedAnte);
+  $('resetBankBtn').disabled=state.busy||state.phase!=='betting';
+  for(const id of ['foldBtn','foldAfterBtn','sortBtn','sortAfterBtn','clearBtn'])$(id).disabled=locked;
+  for(const id of ['betBtn','betAfterBtn']){$(id).disabled=locked||!canAfford(b.ante*2);$(id).textContent='BOX '+b.id+' · BET '+money(b.ante*2);}
+  $('sixthBtn').disabled=locked||b.modified||!canAfford(b.ante);
+  $('sixthBtn').textContent='BUY 6TH · '+money(b.ante);
+  el.draw.disabled=locked||b.modified||!b.selected.size||!canAfford(b.ante);
+  el.draw.textContent=b.selected.size?'DRAW '+b.selected.size+' · '+money(b.ante):'DRAW SELECTED';
+  $('newHandBtn').disabled=state.busy||state.phase!=='round';
+  $('controlTitle').textContent=playing?'BOX '+b.id:state.phase==='round'?'ROUND COMPLETE':'PLACE YOUR ANTE';
+  $('controlHint').textContent=playing?(b.modified?'Bet or fold':'Tap cards to select'):state.count+' box'+(state.count===1?'':'es');
+  $('chips').querySelectorAll('button').forEach(button=>{button.disabled=state.busy||state.phase!=='betting';button.classList.toggle('active',Number(button.dataset.ante)===state.selectedAnte);});
+ }
+ function renderCards(){
+  const revealed=state.phase==='round';
+  el.bankroll.textContent=money(state.bankroll);
+  el.dealerCards.innerHTML=state.dealer.map((c,i)=>cardHTML(c,!revealed&&i!==state.dealerUpIndex,false,false,i)).join('');
+  el.dealerHand.textContent='';
+  el.dealerHint.textContent=revealed?(dealerQualifies(bestHand(state.dealer))?'Dealer qualifies · '+bestHand(state.dealer).name:'Dealer has no game'):state.dealer.length?'One card exposed · A-K to qualify':'Dealer qualifies with A-K or better';
+  $('boxStack').innerHTML=state.boxes.map((b,i)=>{
+   const active=state.phase==='playing'&&i===state.active&&undecided(b);
+   const status=b.result||(b.status==='bet'?'BET PLACED':b.status==='folded'?'FOLDED':b.status==='empty'?'READY':active?'● YOUR MOVE':'AWAITING DECISION');
+   return '<section class="box-row '+(active?'active ':'')+b.kind+(b.hand.length?'':' empty')+'" data-box="'+i+'" aria-label="Box '+b.id+'"><div class="box-header"><button type="button" data-activate="'+i+'" aria-pressed="'+active+'" '+(!undecided(b)||state.busy?'disabled':'')+'>BOX '+b.id+'</button><span class="box-status">'+status+'</span></div><div class="cards">'+(b.hand.length?b.hand.map((c,j)=>cardHTML(c,false,active&&!b.modified,b.selected.has(j),j)).join(''):'Waiting for the deal')+'</div><div class="box-footer"><b>'+(b.hand.length?bestHand(b.hand).name:'Your hand')+'</b><span class="box-stakes">Ante '+(b.ante||state.selectedAnte)+' · Bet '+(b.bet||'—')+(b.fee?' · Fee '+b.fee:'')+'</span></div></section>';
+  }).join('');
+  syncControls();
+ }
+ function activeCards(){return [...$('boxStack').querySelector('[data-box="'+state.active+'"]').querySelector('.cards').children];}
+ async function deal(){
+  if(state.busy||state.phase!=='betting'||!canAfford(state.count*state.selectedAnte))return;
+  setBusy(true);state.roundStart=state.bankroll;state.boxes=Array.from({length:state.count},(_,i)=>new BoxState(i+1));state.active=0;state.deck.reset();state.dealer=[];
+  state.boxes.forEach(b=>{b.ante=state.selectedAnte;b.status='decision';state.bankroll-=b.ante;});
+  for(let i=0;i<5;i++){state.boxes.forEach(b=>b.hand.push(state.deck.draw()));state.dealer.push(state.deck.draw());}
+  state.phase='playing';renderCards();msg('Dealing…');
+  const rows=[...$('boxStack').querySelectorAll('.cards')].map(row=>[...row.children]),dealer=[...el.dealerCards.children],jobs=[];let step=0;
+  for(let i=0;i<5;i++){rows.forEach(row=>jobs.push(animateDealIn(row[i],step++*45,260)));jobs.push(animateDealIn(dealer[i],step++*45,260));}
+  await Promise.all(jobs);setBusy(false);msg('Choose a move for Box 1.');
+ }
+ async function modify(sixth=false){
+  const b=box();if(state.busy||state.phase!=='playing'||!undecided(b)||b.modified||!canAfford(b.ante)||(!sixth&&!b.selected.size))return;
+  setBusy(true);state.bankroll-=b.ante;b.fee+=b.ante;b.modified=true;b.status='postDraw';
+  const indices=sixth?[5]:[...b.selected];
+  if(sixth)b.hand.push(state.deck.draw());else indices.forEach(i=>b.hand[i]=state.deck.draw());
+  b.selected.clear();renderCards();const cards=activeCards();await Promise.all(indices.map((i,j)=>animateDealIn(cards[i],j*60,280)));
+  setBusy(false);msg('Box '+b.id+': '+(sixth?'sixth card added':'draw complete')+'. Bet or fold.');
+ }
+ async function decide(folded){
+  const b=box();if(state.busy||state.phase!=='playing'||!undecided(b)||(!folded&&!canAfford(b.ante*2)))return;
+  setBusy(true);b.selected.clear();b.status=folded?'folded':'bet';if(!folded){b.bet=b.ante*2;state.bankroll-=b.bet;}
+  const next=state.boxes.findIndex(undecided);
+  if(next>=0){state.active=next;renderCards();setBusy(false);msg('Box '+b.id+(folded?' folded.':' bet placed.')+' Your move: Box '+box().id+'.');$('boxStack').querySelector('[data-box="'+next+'"]').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'nearest'});return;}
+  renderCards();msg('Dealer reveals…');
+  [...el.dealerCards.children].forEach((node,i)=>setTimeout(()=>node.classList.remove('face-down'),i*75));
+  await sleep(500);resolveRound();setBusy(false);
+ }
+ function resolveRound(){
+  if(state.phase!=='playing'||state.boxes.some(undecided))return;
+  const dealer=bestHand(state.dealer);
+  state.boxes.forEach(b=>{
+   let returned=0;
+   if(b.status==='folded'){b.result='FOLDED';b.kind='loss';}
+   else {
+    const hand=bestHand(b.hand),cmp=compareEval(hand,dealer);
+    if(!dealerQualifies(dealer)){returned=b.ante*2+b.bet;b.result='NO GAME';b.kind='win';}
+    else if(cmp>0){returned=b.ante+b.bet+b.bet*hand.payout;b.result='WON';b.kind='win';}
+    else if(cmp===0){returned=b.ante+b.bet;b.result='PUSH';b.kind='push';}
+    else {b.result='LOST';b.kind='loss';}
+   }
+   state.bankroll+=returned;b.net=returned-b.ante-b.bet-b.fee;b.result+=' · '+signed(b.net);b.status='settled';
+  });
+  state.phase='round';renderCards();const net=state.bankroll-state.roundStart;msg('Round total '+signed(net)+' · Includes all antes, bets and draw fees.',net>0?'win':net<0?'loss':'push');
+ }
+ function newHand(){if(state.busy||state.phase!=='round')return;state.boxes=Array.from({length:state.count},(_,i)=>new BoxState(i+1));state.active=0;state.dealer=[];state.phase='betting';renderCards();msg('Choose your ante and deal.');}
+ $('boxChoice').addEventListener('click',e=>{const button=e.target.closest('[data-count]');if(!button)return;state.count=Number(button.dataset.count);$('boxChoice').querySelectorAll('button').forEach(b=>{const selected=b===button;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',selected);});$('startGame').textContent='PLAY WITH '+state.count+' BOX'+(state.count===1?'':'ES');});
+ $('startGame').onclick=()=>{if(state.phase!=='startup')return;state.boxes=Array.from({length:state.count},(_,i)=>new BoxState(i+1));state.phase='betting';$('startup').hidden=true;root.inert=false;renderCards();el.deal.focus();};
+ $('boxStack').addEventListener('click',e=>{
+  if(state.busy||state.phase!=='playing')return;const row=e.target.closest('[data-box]');if(!row)return;const index=Number(row.dataset.box),b=state.boxes[index];if(!undecided(b))return;
+  const wasActive=index===state.active;state.active=index;const card=e.target.closest('[data-index]');
+  if(card&&wasActive&&!b.modified){const i=Number(card.dataset.index);b.selected.has(i)?b.selected.delete(i):b.selected.add(i);}renderCards();
+ });
+ $('chips').addEventListener('click',e=>{const b=e.target.closest('[data-ante]');if(!b||state.busy||state.phase!=='betting')return;state.selectedAnte=Number(b.dataset.ante);renderCards();});
+ el.deal.onclick=deal;$('resetBankBtn').onclick=()=>{if(state.busy||state.phase!=='betting')return;state.bankroll=1000;renderCards();msg('Bankroll reset to 1,000.');};
+ ['foldBtn','foldAfterBtn'].forEach(id=>$(id).onclick=()=>decide(true));['betBtn','betAfterBtn'].forEach(id=>$(id).onclick=()=>decide(false));
+ el.draw.onclick=()=>modify(false);$('sixthBtn').onclick=()=>modify(true);
+ ['sortBtn','sortAfterBtn'].forEach(id=>$(id).onclick=()=>{if(state.busy||!undecided(box()))return;box().hand.sort((a,b)=>b.rank-a.rank||a.suit.localeCompare(b.suit));box().selected.clear();renderCards();});
+ $('clearBtn').onclick=()=>{if(state.busy||!undecided(box()))return;box().selected.clear();renderCards();};$('newHandBtn').onclick=newHand;
+ renderCards();$('boxChoice').querySelector('button').focus();
 })();
+
 </script>
 </body>
 </html>
