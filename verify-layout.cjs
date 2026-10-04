@@ -34,6 +34,15 @@ const {chromium} = require('playwright');
         await check('betting');
         await page.locator('#dealBtn').click();
         await check('decision');
+        if(count>1){
+          const original=await page.locator('.box-row').first().locator('.card').first().innerText();
+          await page.locator('.box-row').first().locator('.card').first().click();
+          await page.locator('#drawBtn').click();
+          const pending=page.locator('.exchange-pending');
+          assert.equal(await pending.count(),1);
+          assert.equal(await pending.innerText(),original);
+          await check('pending exchange');
+        }
         await page.locator('#sixthBtn').click();
         await check('sixth card');
         await page.locator('#rulesBtn').click();

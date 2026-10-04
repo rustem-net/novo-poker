@@ -14,6 +14,8 @@ Player hands automatically sort highest first after the initial deal animation a
 
 When the best hand is a five-high straight or straight flush, Ace displays low (5, 4, 3, 2, A). Otherwise Ace stays high, including A, K, Q, J, 10.
 
+The dealer sorts after its full reveal. During pending exchanges, discarded cards remain visible and dimmed so players can refer to them while deciding on other boxes. The new sixth card remains face down until the shared reveal.
+
 The game fits the dynamic viewport height, dividing the available table space evenly between the chosen boxes. Dealer and controls stay compact; rules open with the header's question-mark button. In short landscape viewports, controls move beside the table.
 
 With Playwright available, run `node verify-layout.cjs` to check one, two, and three boxes at iPhone 12 Pro dimensions (390 × 844), shorter browser viewports, and landscape. It uses installed Chrome by default; set `LAYOUT_BROWSER=msedge` to use Edge.

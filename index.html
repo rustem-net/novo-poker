@@ -173,6 +173,8 @@
  .topbar{flex:none;margin:0;min-height:26px}.brand{font-size:12px}.bank{font-size:14px;gap:6px}.bank small{display:inline;margin-right:5px;font-size:9px}
  .header-tools{display:flex;align-items:center;gap:10px}
  .version{color:var(--muted);font-size:10px;font-weight:600;letter-spacing:0;margin-left:4px}
+ .card.exchange-pending{opacity:.58;filter:saturate(.65)}
+ .card.exchange-pending .front{border:2px dashed #8a7951}
  .help-button{width:28px;height:28px;border:1px solid var(--line);border-radius:50%;background:#183128;font-weight:800;cursor:pointer}
  .app .table{flex:1;min-height:0;display:flex;flex-direction:column;padding:8px;gap:5px;border-radius:20px}
  .app .dealer{flex:none;min-height:0}.dealer .zone-label{margin:0;font-size:10px}
@@ -284,7 +286,7 @@
 (() => {
  'use strict';
  const $=id=>document.getElementById(id),root=$('app');
- const VERSION='v0.1';
+ const VERSION='v0.2';
  $('startupVersion').textContent=VERSION;
  $('appVersion').textContent=VERSION;
    const SUITS = [
@@ -309,7 +311,7 @@
 
 
  class BoxState {
-  constructor(id){this.id=id;this.hand=[];this.pending=new Set();this.ante=0;this.bet=0;this.fee=0;this.selected=new Set();this.modified=false;this.status='empty';this.result='';this.kind='';this.net=0;}
+  constructor(id){this.id=id;this.hand=[];this.pending=new Set();this.originals=new Map();this.ante=0;this.bet=0;this.fee=0;this.selected=new Set();this.modified=false;this.status='empty';this.result='';this.kind='';this.net=0;}
  }
  const state={bankroll:1000,selectedAnte:10,count:1,boxes:[new BoxState(1)],active:0,deck:new Deck(),dealer:[],dealerUpIndex:4,phase:'startup',busy:false,roundStart:1000};
  const box=()=>state.boxes[state.active];
@@ -429,19 +431,25 @@
   $('boxStack').innerHTML=state.boxes.map((b,i)=>{
    const active=state.phase==='playing'&&i===state.active&&undecided(b);
    const status=b.result||(b.pending.size?'WAITING FOR OTHER BOXES':b.status==='bet'?'BET PLACED':b.status==='folded'?'FOLDED':b.status==='empty'?'READY':active?'● YOUR MOVE':'AWAITING DECISION');
-   return '<section class="box-row '+(active?'active ':'')+b.kind+(b.hand.length?'':' empty')+'" data-box="'+i+'" aria-label="Box '+b.id+'"><div class="box-header"><button type="button" data-activate="'+i+'" aria-pressed="'+active+'" '+(!undecided(b)||state.busy?'disabled':'')+'>BOX '+b.id+'</button><span class="box-status">'+status+'</span></div><div class="cards">'+(b.hand.length?b.hand.map((c,j)=>b.pending.has(j)?'<button type="button" class="card face-down" tabindex="-1" aria-label="Replacement card hidden"><span class="card-inner"><span class="face back"></span></span></button>':cardHTML(c,false,active&&!b.modified,b.selected.has(j),j)).join(''):'Waiting for the deal')+'</div><div class="box-footer"><b>'+(b.pending.size?'Exchange pending':b.hand.length?bestHand(b.hand).name:'Your hand')+'</b><span class="box-stakes">Ante '+(b.ante||state.selectedAnte)+' · Bet '+(b.bet||'—')+(b.fee?' · Fee '+b.fee:'')+'</span></div></section>';
+   return '<section class="box-row '+(active?'active ':'')+b.kind+(b.hand.length?'':' empty')+'" data-box="'+i+'" aria-label="Box '+b.id+'"><div class="box-header"><button type="button" data-activate="'+i+'" aria-pressed="'+active+'" '+(!undecided(b)||state.busy?'disabled':'')+'>BOX '+b.id+'</button><span class="box-status">'+status+'</span></div><div class="cards">'+(b.hand.length?b.hand.map((c,j)=>b.pending.has(j)?pendingCardHTML(b,j):cardHTML(c,false,active&&!b.modified,b.selected.has(j),j)).join(''):'Waiting for the deal')+'</div><div class="box-footer"><b>'+(b.pending.size?'Exchange pending':b.hand.length?bestHand(b.hand).name:'Your hand')+'</b><span class="box-stakes">Ante '+(b.ante||state.selectedAnte)+' · Bet '+(b.bet||'—')+(b.fee?' · Fee '+b.fee:'')+'</span></div></section>';
   }).join('');
   syncControls();
  }
  function activeCards(){return [...$('boxStack').querySelector('[data-box="'+state.active+'"]').querySelector('.cards').children];}
- function sortHand(b){
-  const best=bestHand(b.hand),aceLow=(best.key==='straight'||best.key==='straightFlush')&&best.tiebreak[0]===5;
-  const rank=c=>aceLow&&c.rank===14?1:c.rank;
-  b.hand.sort((a,b)=>rank(b)-rank(a)||a.suit.localeCompare(b.suit));b.selected.clear();
+ function pendingCardHTML(b,index){
+  const original=b.originals.get(index);
+  if(original)return cardHTML(original,false,false,false,index).replace('class="card"','class="card exchange-pending" aria-label="'+original.label+original.symbol+' awaiting replacement"');
+  return '<button type="button" class="card face-down" tabindex="-1" aria-label="Sixth card hidden"><span class="card-inner"><span class="face back"></span></span></button>';
  }
+ function sortCards(cards){
+  const best=bestHand(cards),aceLow=(best.key==='straight'||best.key==='straightFlush')&&best.tiebreak[0]===5;
+  const rank=c=>aceLow&&c.rank===14?1:c.rank;
+  cards.sort((a,b)=>rank(b)-rank(a)||a.suit.localeCompare(b.suit));
+ }
+ function sortHand(b){sortCards(b.hand);b.selected.clear();}
  function releaseExchanges(){
   if(state.boxes.some(b=>b.status==='decision'))return;
-  state.boxes.forEach(b=>{if(b.pending.size){b.pending.clear();sortHand(b);}});
+  state.boxes.forEach(b=>{if(b.pending.size){b.pending.clear();b.originals.clear();sortHand(b);}});
  }
  async function deal(){
   if(state.busy||state.phase!=='betting'||!canAfford(state.count*state.selectedAnte))return;
@@ -458,6 +466,7 @@
   setBusy(true);state.bankroll-=b.ante;b.fee+=b.ante;b.modified=true;b.status='postDraw';
   const indices=sixth?[5]:[...b.selected];
   b.pending=new Set(indices);
+  if(!sixth)indices.forEach(i=>b.originals.set(i,b.hand[i]));
   if(sixth)b.hand.push(state.deck.draw());else indices.forEach(i=>b.hand[i]=state.deck.draw());
   b.selected.clear();releaseExchanges();
   const next=state.boxes.findIndex(b=>b.status==='decision');
@@ -478,6 +487,7 @@
  function resolveRound(){
   if(state.phase!=='playing'||state.boxes.some(undecided))return;
   const dealer=bestHand(state.dealer);
+  sortCards(state.dealer);
   state.boxes.forEach(b=>{
    let returned=0;
    if(b.status==='folded'){b.result='FOLDED';b.kind='loss';}
