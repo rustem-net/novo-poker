@@ -3,7 +3,7 @@ const html=fs.readFileSync('index.html','utf8');
 let script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
 new vm.Script(script);
 script=script.replace(/\}\)\(\);\s*$/, 'globalThis.game={state,BoxState,deal,modify,decide,resolveRound,newHand,renderCards,bestHand,dealerQualifies};})();');
-const node=()=>({children:[],style:{},dataset:{},classList:{toggle(){},remove(){}},setAttribute(){},focus(){},scrollIntoView(){},addEventListener(){},querySelector(){return node();},querySelectorAll(){return [];}});
+const node=()=>({children:[],style:{setProperty(){}},dataset:{},classList:{toggle(){},remove(){}},setAttribute(){},focus(){},scrollIntoView(){},addEventListener(){},querySelector(){return node();},querySelectorAll(){return [];}});
 const pageIds=new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]));
 const elements={};const document={getElementById(id){assert(pageIds.has(id),'Missing HTML element: '+id);return elements[id]??=node();}};
 const cards=()=>Array.from({length:6},node);

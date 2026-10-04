@@ -168,13 +168,44 @@
  .box-row.empty .cards{min-height:65px;color:var(--muted);font-size:12px}
  .box-row.loss .box-status{color:#ffc2c2}.box-row.win .box-status{color:var(--gold2)}
  .action-dock details{max-height:30vh;overflow:auto}
+ /* Give the hands every pixel left after the dealer and controls. */
+ .app{height:100dvh;min-height:0;display:flex;flex-direction:column;gap:6px;padding:calc(6px + env(safe-area-inset-top)) 8px calc(6px + env(safe-area-inset-bottom));overflow:hidden}
+ .topbar{flex:none;margin:0;min-height:26px}.brand{font-size:12px}.bank{font-size:14px;gap:6px}.bank small{display:inline;margin-right:5px;font-size:9px}
+ .header-tools{display:flex;align-items:center;gap:10px}
+ .help-button{width:28px;height:28px;border:1px solid var(--line);border-radius:50%;background:#183128;font-weight:800;cursor:pointer}
+ .app .table{flex:1;min-height:0;display:flex;flex-direction:column;padding:8px;gap:5px;border-radius:20px}
+ .app .dealer{flex:none;min-height:0}.dealer .zone-label{margin:0;font-size:10px}
+ .app .dealer .cards{padding:3px 0;min-height:0;gap:5px}
+ .app .dealer .card{width:36px;flex:0 0 36px}.app .dealer .rank{font-size:22px}.app .dealer .suit-corner{font-size:12px;left:3px;top:3px}.app .dealer .suit-corner.bottom{left:auto;top:auto;right:3px;bottom:3px}
+ .app .dealer .hint{font-size:10px;min-height:0;margin:0}.dealer .hand-name{display:none}
+ .app .divider{flex:none;margin:0;height:1px}
+ .box-stack{flex:1;min-height:0;grid-template-rows:repeat(var(--box-count,1),minmax(0,1fr));gap:5px}
+ .box-row{min-height:0;display:flex;flex-direction:column;padding:5px 7px;container-type:size;scroll-margin-bottom:0}
+ .box-header,.box-footer{flex:none;font-size:10px;gap:4px}.box-header button{padding:0;min-height:22px}.box-status{font-size:9px}.box-footer b{font-size:11px}.box-stakes{font-size:9px}
+ .app .box-row .cards{flex:1;min-height:0;padding:5px 0;gap:5px}
+ .app .box-row .card{width:min(65px,calc((100cqh - 52px)*5/7),calc((100cqw - 25px)/6));height:auto;flex:0 0 auto}
+ .app .box-row .rank{font-size:clamp(18px,26cqh,34px)}.app .box-row .suit-corner{font-size:clamp(10px,14cqh,17px);left:3px;top:3px}.app .box-row .suit-corner.bottom{left:auto;top:auto;right:3px;bottom:3px}
+ .app .box-row.empty .cards{min-height:0}.app .message{flex:none;min-height:24px;margin:0;padding:3px 5px;font-size:10px}
+ .app .action-dock{position:static;flex:none;margin:0;padding:7px 8px;border-radius:14px;backdrop-filter:none}
+ .control-heading{font-size:10px}.app .action-dock .actions{gap:5px;margin-top:5px}.app .action-dock .btn{min-height:36px;padding:5px 6px;font-size:11px}
+ .app .action-dock .minirow{gap:5px;margin-top:5px}.app .action-dock .minirow .btn{min-height:30px;font-size:10px}
+ .setup-caption{font-size:10px;margin-top:3px}.setup-title{font-size:10px}.chips{gap:6px}.app .chip{width:34px;height:34px;border-width:2px;font-size:10px}.app .chip.active{outline-width:2px;outline-offset:1px}
+ .foot{display:none}
+ .rules-dialog{color:var(--text);background:#0c291e;border:1px solid #6d653c;border-radius:20px;width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 40px);padding:18px;overflow:auto;font-size:12px;line-height:1.5}
+ .rules-dialog::backdrop{background:#0009}.rules-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.rules-heading h2{margin:0;font-size:16px}
+ @media(max-height:600px){.app{gap:4px}.app .dealer .card{width:28px;flex-basis:28px}.app .dealer .rank{font-size:18px}.app .dealer .suit-corner{font-size:9px}.app .dealer .hint{font-size:9px}.app .table{padding:5px;gap:3px}.box-header button{min-height:18px}.box-row{padding:3px 5px}.app .action-dock .btn{min-height:30px}.app .action-dock .minirow .btn{min-height:26px}}
+ @media(max-height:500px) and (min-width:600px){
+  .app{max-width:100%;display:grid;grid-template-columns:minmax(0,1fr) 180px;grid-template-rows:auto minmax(0,1fr)}
+  .topbar{grid-column:1/-1}.app .action-dock{align-self:stretch}.app .dealer{display:flex;align-items:center;justify-content:center;gap:8px}.app .dealer .cards{padding:0}.app .dealer .hint{max-width:100px}
+  .app .box-row .rank{font-size:clamp(14px,24cqh,28px)}.app .box-row .suit-corner{font-size:clamp(8px,12cqh,14px)}.app .box-row .cards{padding:2px 0}.app .box-row .card{width:min(60px,calc((100cqh - 40px)*5/7),calc((100cqw - 25px)/6))}
+ }
  </style>
 </head>
 <body>
 <div class="startup" id="startup"><section class="startup-card" role="dialog" aria-modal="true" aria-labelledby="startupTitle"><div class="brand">NOVO POKER</div><h1 id="startupTitle">How many boxes?</h1><p>Play up to three hands against one dealer.<br>Choose once, then keep playing.</p><div class="box-choice" id="boxChoice"><button class="btn active" data-count="1" aria-pressed="true">1</button><button class="btn" data-count="2" aria-pressed="false">2</button><button class="btn" data-count="3" aria-pressed="false">3</button></div><button class="btn primary start-button" id="startGame">PLAY WITH 1 BOX</button><p>Refresh to pick a different number.</p></section></div><main class="app" id="app" inert>
   <header class="topbar">
     <div class="brand">NOVO POKER</div>
-    <div class="bank"><div class="value"><small>Bankroll</small><span id="bankroll">1,000</span></div></div>
+    <div class="header-tools"><div class="bank"><div class="value"><small>Bankroll</small><span id="bankroll">1,000</span></div></div><button type="button" class="help-button" id="rulesBtn" aria-label="Open rules and paytable">?</button></div>
   </header>
 
   <section class="table" aria-label="Novo Poker table">
@@ -235,16 +266,16 @@
       <div class="actions"><button class="btn primary" type="button" id="newHandBtn">NEW HAND</button></div>
     </div>
 
-    <details>
-      <summary>Rules & paytable used in this version</summary>
+  </section>
+  <dialog class="rules-dialog" id="rulesDialog" aria-labelledby="rulesTitle">
+      <div class="rules-heading"><h2 id="rulesTitle">Rules & paytable</h2><button type="button" class="help-button" id="closeRulesBtn" aria-label="Close rules">×</button></div>
       <div style="margin-top:6px">Dealer needs <b>A-K or better</b>. Play bet is <b>2× Ante</b>. Drawing selected cards or buying a sixth card costs <b>1× Ante</b>. If Dealer has no game, Ante wins 1:1 and Bet is returned. If Dealer qualifies and you win, BET pays by your best five-card hand. Ties push.</div>
       <div class="paytable">
         <span>Royal Flush</span><b>100:1</b><span>Straight Flush</span><b>50:1</b><span>Four of a Kind</span><b>20:1</b><span>Full House</span><b>7:1</b><span>Flush</span><b>5:1</b><span>Straight</span><b>4:1</b><span>Three of a Kind</span><b>3:1</b><span>Two Pair</span><b>2:1</b><span>Pair / A-K</span><b>1:1</b>
       </div>
       <div style="margin-top:7px">Replacement and sixth cards reveal together after every box chooses an exchange, sixth card, bet, or fold. Then exchanged hands can bet or fold.</div>
       <div style="margin-top:7px">MVP simplifications: no Bonus, Insurance, dealer-game purchase, or second-combination payout.</div>
-    </details>
-  </section>
+  </dialog>
   <div class="foot">Offline practice game · Shared deck and dealer · Refresh to choose your box count again.</div>
 </main>
 
@@ -385,6 +416,7 @@
   $('chips').querySelectorAll('button').forEach(button=>{button.disabled=state.busy||state.phase!=='betting';button.classList.toggle('active',Number(button.dataset.ante)===state.selectedAnte);});
  }
  function renderCards(){
+  root.style.setProperty('--box-count',state.count);
   const revealed=state.phase==='round';
   el.bankroll.textContent=money(state.bankroll);
   el.dealerCards.innerHTML=state.dealer.map((c,i)=>cardHTML(c,!revealed&&i!==state.dealerUpIndex,false,false,i)).join('');
@@ -465,6 +497,9 @@
  el.draw.onclick=()=>modify(false);$('sixthBtn').onclick=()=>modify(true);
  ['sortBtn','sortAfterBtn'].forEach(id=>$(id).onclick=()=>{if(state.busy||!undecided(box())||box().pending.size)return;box().hand.sort((a,b)=>b.rank-a.rank||a.suit.localeCompare(b.suit));box().selected.clear();renderCards();});
  $('clearBtn').onclick=()=>{if(state.busy||!undecided(box()))return;box().selected.clear();renderCards();};$('newHandBtn').onclick=newHand;
+ $('rulesBtn').onclick=()=>$('rulesDialog').showModal();
+ $('closeRulesBtn').onclick=()=>$('rulesDialog').close();
+ $('rulesDialog').addEventListener('click',e=>{if(e.target!==$('rulesDialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();});
  renderCards();$('boxChoice').querySelector('button').focus();
 })();
 
