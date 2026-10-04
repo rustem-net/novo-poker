@@ -172,6 +172,7 @@
  .app{height:100dvh;min-height:0;display:flex;flex-direction:column;gap:6px;padding:calc(6px + env(safe-area-inset-top)) 8px calc(6px + env(safe-area-inset-bottom));overflow:hidden}
  .topbar{flex:none;margin:0;min-height:26px}.brand{font-size:12px}.bank{font-size:14px;gap:6px}.bank small{display:inline;margin-right:5px;font-size:9px}
  .header-tools{display:flex;align-items:center;gap:10px}
+ .version{color:var(--muted);font-size:10px;font-weight:600;letter-spacing:0;margin-left:4px}
  .help-button{width:28px;height:28px;border:1px solid var(--line);border-radius:50%;background:#183128;font-weight:800;cursor:pointer}
  .app .table{flex:1;min-height:0;display:flex;flex-direction:column;padding:8px;gap:5px;border-radius:20px}
  .app .dealer{flex:none;min-height:0}.dealer .zone-label{margin:0;font-size:10px}
@@ -202,9 +203,9 @@
  </style>
 </head>
 <body>
-<div class="startup" id="startup"><section class="startup-card" role="dialog" aria-modal="true" aria-labelledby="startupTitle"><div class="brand">NOVO POKER</div><h1 id="startupTitle">How many boxes?</h1><p>Play up to three hands against one dealer.<br>Choose once, then keep playing.</p><div class="box-choice" id="boxChoice"><button class="btn active" data-count="1" aria-pressed="true">1</button><button class="btn" data-count="2" aria-pressed="false">2</button><button class="btn" data-count="3" aria-pressed="false">3</button></div><button class="btn primary start-button" id="startGame">PLAY WITH 1 BOX</button><p>Refresh to pick a different number.</p></section></div><main class="app" id="app" inert>
+<div class="startup" id="startup"><section class="startup-card" role="dialog" aria-modal="true" aria-labelledby="startupTitle"><div class="brand">NOVO POKER <span class="version" id="startupVersion"></span></div><h1 id="startupTitle">How many boxes?</h1><p>Play up to three hands against one dealer.<br>Choose once, then keep playing.</p><div class="box-choice" id="boxChoice"><button class="btn active" data-count="1" aria-pressed="true">1</button><button class="btn" data-count="2" aria-pressed="false">2</button><button class="btn" data-count="3" aria-pressed="false">3</button></div><button class="btn primary start-button" id="startGame">PLAY WITH 1 BOX</button><p>Refresh to pick a different number.</p></section></div><main class="app" id="app" inert>
   <header class="topbar">
-    <div class="brand">NOVO POKER</div>
+    <div class="brand">NOVO POKER <span class="version" id="appVersion"></span></div>
     <div class="header-tools"><div class="bank"><div class="value"><small>Bankroll</small><span id="bankroll">1,000</span></div></div><button type="button" class="help-button" id="rulesBtn" aria-label="Open rules and paytable">?</button></div>
   </header>
 
@@ -283,6 +284,9 @@
 (() => {
  'use strict';
  const $=id=>document.getElementById(id),root=$('app');
+ const VERSION='v0.1';
+ $('startupVersion').textContent=VERSION;
+ $('appVersion').textContent=VERSION;
    const SUITS = [
     {id:'S', symbol:'♠', red:false}, {id:'H', symbol:'♥', red:true},
     {id:'D', symbol:'♦', red:true}, {id:'C', symbol:'♣', red:false}
@@ -430,9 +434,14 @@
   syncControls();
  }
  function activeCards(){return [...$('boxStack').querySelector('[data-box="'+state.active+'"]').querySelector('.cards').children];}
+ function sortHand(b){
+  const best=bestHand(b.hand),aceLow=(best.key==='straight'||best.key==='straightFlush')&&best.tiebreak[0]===5;
+  const rank=c=>aceLow&&c.rank===14?1:c.rank;
+  b.hand.sort((a,b)=>rank(b)-rank(a)||a.suit.localeCompare(b.suit));b.selected.clear();
+ }
  function releaseExchanges(){
   if(state.boxes.some(b=>b.status==='decision'))return;
-  state.boxes.forEach(b=>b.pending.clear());
+  state.boxes.forEach(b=>{if(b.pending.size){b.pending.clear();sortHand(b);}});
  }
  async function deal(){
   if(state.busy||state.phase!=='betting'||!canAfford(state.count*state.selectedAnte))return;
@@ -442,7 +451,7 @@
   state.phase='playing';renderCards();msg('Dealing…');
   const rows=[...$('boxStack').querySelectorAll('.cards')].map(row=>[...row.children]),dealer=[...el.dealerCards.children],jobs=[];let step=0;
   for(let i=0;i<5;i++){rows.forEach(row=>jobs.push(animateDealIn(row[i],step++*45,260)));jobs.push(animateDealIn(dealer[i],step++*45,260));}
-  await Promise.all(jobs);setBusy(false);msg('Choose a move for Box 1.');
+  await Promise.all(jobs);state.boxes.forEach(sortHand);renderCards();setBusy(false);msg('Choose a move for Box 1.');
  }
  async function modify(sixth=false){
   const b=box();if(state.busy||state.phase!=='playing'||!undecided(b)||b.modified||!canAfford(b.ante)||(!sixth&&!b.selected.size))return;
@@ -495,7 +504,7 @@
  el.deal.onclick=deal;$('resetBankBtn').onclick=()=>{if(state.busy||state.phase!=='betting')return;state.bankroll=1000;renderCards();msg('Bankroll reset to 1,000.');};
  ['foldBtn','foldAfterBtn'].forEach(id=>$(id).onclick=()=>decide(true));['betBtn','betAfterBtn'].forEach(id=>$(id).onclick=()=>decide(false));
  el.draw.onclick=()=>modify(false);$('sixthBtn').onclick=()=>modify(true);
- ['sortBtn','sortAfterBtn'].forEach(id=>$(id).onclick=()=>{if(state.busy||!undecided(box())||box().pending.size)return;box().hand.sort((a,b)=>b.rank-a.rank||a.suit.localeCompare(b.suit));box().selected.clear();renderCards();});
+ ['sortBtn','sortAfterBtn'].forEach(id=>$(id).onclick=()=>{if(state.busy||!undecided(box())||box().pending.size)return;sortHand(box());renderCards();});
  $('clearBtn').onclick=()=>{if(state.busy||!undecided(box()))return;box().selected.clear();renderCards();};$('newHandBtn').onclick=newHand;
  $('rulesBtn').onclick=()=>$('rulesDialog').showModal();
  $('closeRulesBtn').onclick=()=>$('rulesDialog').close();
