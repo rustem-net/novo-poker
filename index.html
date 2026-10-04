@@ -33,11 +33,11 @@
   .card.face-down .card-inner{transform:rotateY(180deg)}
   .face{position:absolute;inset:0;border-radius:8px;backface-visibility:hidden;box-shadow:0 4px 10px rgba(0,0,0,.24);overflow:hidden}
   .front{background:linear-gradient(145deg,#fff,#f2efe7);color:var(--ink);border:1px solid #d8d4ca;display:grid;place-items:center;padding:5px}
-  /* Four-colour poker deck: each suit has its own colour. */
+  /* Traditional two-colour deck. */
   .front.suit-S{color:#111418}
   .front.suit-H{color:#c62828}
-  .front.suit-D{color:#1565c0}
-  .front.suit-C{color:#218c4f}
+  .front.suit-D{color:#c62828}
+  .front.suit-C{color:#111418}
   .rank{font-size:clamp(25px,7.5vw,42px);line-height:1;font-weight:950;letter-spacing:-.04em}
   .suit-corner{position:absolute;top:5px;left:6px;font-size:clamp(15px,4.3vw,23px);line-height:1;font-weight:800}
   .suit-corner.bottom{top:auto;left:auto;right:6px;bottom:5px;transform:rotate(180deg)}
@@ -124,7 +124,7 @@
   .app.short-height .minirow .btn{min-height:31px;font-size:10px}
   .app.short-height details,.app.short-height .foot{display:none}
   @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
-  .app{max-width:540px;padding-bottom:12px}
+  .app{max-width:500px;padding-bottom:12px}
   .dealer,.app.compact-height .dealer,.app.short-height .dealer{min-height:0}
   .dealer .cards{min-height:0;padding:4px 2px 6px}
   .dealer .card{flex:0 1 48px}
@@ -140,8 +140,8 @@
   .box-status{font-size:10px;color:var(--muted);letter-spacing:.03em}
   .active .box-status{color:var(--gold2)}
   .box-row .cards,.app.compact-height .box-row .cards,.app.short-height .box-row .cards{min-height:0;padding:9px 0 6px;gap:7px}
-  .box-row .card,.app.compact-height .box-row .card,.app.short-height .box-row .card{flex:0 1 51px;width:51px}
-  .box-row .rank{font-size:28px}
+  .box-row .card,.app.compact-height .box-row .card,.app.short-height .box-row .card{flex:0 1 47px;width:47px}
+  .box-row .rank{font-size:26px}
   .box-row .suit-corner{font-size:15px;left:4px;top:4px}
   .box-row .suit-corner.bottom{left:auto;top:auto;right:4px;bottom:4px}
   .box-row .card.selected{transform:translateY(-5px)}
@@ -241,6 +241,7 @@
       <div class="paytable">
         <span>Royal Flush</span><b>100:1</b><span>Straight Flush</span><b>50:1</b><span>Four of a Kind</span><b>20:1</b><span>Full House</span><b>7:1</b><span>Flush</span><b>5:1</b><span>Straight</span><b>4:1</b><span>Three of a Kind</span><b>3:1</b><span>Two Pair</span><b>2:1</b><span>Pair / A-K</span><b>1:1</b>
       </div>
+      <div style="margin-top:7px">Replacement and sixth cards reveal together after every box chooses an exchange, sixth card, bet, or fold. Then exchanged hands can bet or fold.</div>
       <div style="margin-top:7px">MVP simplifications: no Bonus, Insurance, dealer-game purchase, or second-combination payout.</div>
     </details>
   </section>
@@ -273,7 +274,7 @@
 
 
  class BoxState {
-  constructor(id){this.id=id;this.hand=[];this.ante=0;this.bet=0;this.fee=0;this.selected=new Set();this.modified=false;this.status='empty';this.result='';this.kind='';this.net=0;}
+  constructor(id){this.id=id;this.hand=[];this.pending=new Set();this.ante=0;this.bet=0;this.fee=0;this.selected=new Set();this.modified=false;this.status='empty';this.result='';this.kind='';this.net=0;}
  }
  const state={bankroll:1000,selectedAnte:10,count:1,boxes:[new BoxState(1)],active:0,deck:new Deck(),dealer:[],dealerUpIndex:4,phase:'startup',busy:false,roundStart:1000};
  const box=()=>state.boxes[state.active];
@@ -363,7 +364,7 @@
 
 
  function syncControls(){
-  const b=box(),playing=state.phase==='playing'&&undecided(b),locked=state.busy||!playing;
+  const b=box(),playing=state.phase==='playing'&&undecided(b),locked=state.busy||!playing||b.pending.size>0;
   $('bettingControls').hidden=state.phase!=='betting';
   $('decisionControls').hidden=!playing||b.modified;
   $('postDrawControls').hidden=!playing||!b.modified;
@@ -391,12 +392,16 @@
   el.dealerHint.textContent=revealed?(dealerQualifies(bestHand(state.dealer))?'Dealer qualifies · '+bestHand(state.dealer).name:'Dealer has no game'):state.dealer.length?'One card exposed · A-K to qualify':'Dealer qualifies with A-K or better';
   $('boxStack').innerHTML=state.boxes.map((b,i)=>{
    const active=state.phase==='playing'&&i===state.active&&undecided(b);
-   const status=b.result||(b.status==='bet'?'BET PLACED':b.status==='folded'?'FOLDED':b.status==='empty'?'READY':active?'● YOUR MOVE':'AWAITING DECISION');
-   return '<section class="box-row '+(active?'active ':'')+b.kind+(b.hand.length?'':' empty')+'" data-box="'+i+'" aria-label="Box '+b.id+'"><div class="box-header"><button type="button" data-activate="'+i+'" aria-pressed="'+active+'" '+(!undecided(b)||state.busy?'disabled':'')+'>BOX '+b.id+'</button><span class="box-status">'+status+'</span></div><div class="cards">'+(b.hand.length?b.hand.map((c,j)=>cardHTML(c,false,active&&!b.modified,b.selected.has(j),j)).join(''):'Waiting for the deal')+'</div><div class="box-footer"><b>'+(b.hand.length?bestHand(b.hand).name:'Your hand')+'</b><span class="box-stakes">Ante '+(b.ante||state.selectedAnte)+' · Bet '+(b.bet||'—')+(b.fee?' · Fee '+b.fee:'')+'</span></div></section>';
+   const status=b.result||(b.pending.size?'WAITING FOR OTHER BOXES':b.status==='bet'?'BET PLACED':b.status==='folded'?'FOLDED':b.status==='empty'?'READY':active?'● YOUR MOVE':'AWAITING DECISION');
+   return '<section class="box-row '+(active?'active ':'')+b.kind+(b.hand.length?'':' empty')+'" data-box="'+i+'" aria-label="Box '+b.id+'"><div class="box-header"><button type="button" data-activate="'+i+'" aria-pressed="'+active+'" '+(!undecided(b)||state.busy?'disabled':'')+'>BOX '+b.id+'</button><span class="box-status">'+status+'</span></div><div class="cards">'+(b.hand.length?b.hand.map((c,j)=>b.pending.has(j)?'<button type="button" class="card face-down" tabindex="-1" aria-label="Replacement card hidden"><span class="card-inner"><span class="face back"></span></span></button>':cardHTML(c,false,active&&!b.modified,b.selected.has(j),j)).join(''):'Waiting for the deal')+'</div><div class="box-footer"><b>'+(b.pending.size?'Exchange pending':b.hand.length?bestHand(b.hand).name:'Your hand')+'</b><span class="box-stakes">Ante '+(b.ante||state.selectedAnte)+' · Bet '+(b.bet||'—')+(b.fee?' · Fee '+b.fee:'')+'</span></div></section>';
   }).join('');
   syncControls();
  }
  function activeCards(){return [...$('boxStack').querySelector('[data-box="'+state.active+'"]').querySelector('.cards').children];}
+ function releaseExchanges(){
+  if(state.boxes.some(b=>b.status==='decision'))return;
+  state.boxes.forEach(b=>b.pending.clear());
+ }
  async function deal(){
   if(state.busy||state.phase!=='betting'||!canAfford(state.count*state.selectedAnte))return;
   setBusy(true);state.roundStart=state.bankroll;state.boxes=Array.from({length:state.count},(_,i)=>new BoxState(i+1));state.active=0;state.deck.reset();state.dealer=[];
@@ -411,14 +416,19 @@
   const b=box();if(state.busy||state.phase!=='playing'||!undecided(b)||b.modified||!canAfford(b.ante)||(!sixth&&!b.selected.size))return;
   setBusy(true);state.bankroll-=b.ante;b.fee+=b.ante;b.modified=true;b.status='postDraw';
   const indices=sixth?[5]:[...b.selected];
+  b.pending=new Set(indices);
   if(sixth)b.hand.push(state.deck.draw());else indices.forEach(i=>b.hand[i]=state.deck.draw());
-  b.selected.clear();renderCards();const cards=activeCards();await Promise.all(indices.map((i,j)=>animateDealIn(cards[i],j*60,280)));
-  setBusy(false);msg('Box '+b.id+': '+(sixth?'sixth card added':'draw complete')+'. Bet or fold.');
+  b.selected.clear();releaseExchanges();
+  const next=state.boxes.findIndex(b=>b.status==='decision');
+  state.active=next>=0?next:state.boxes.findIndex(undecided);
+  renderCards();setBusy(false);msg(next>=0?'Exchange queued. Choose a move for Box '+box().id+'.':'All replacement cards revealed. Bet or fold for Box '+box().id+'.');
  }
  async function decide(folded){
-  const b=box();if(state.busy||state.phase!=='playing'||!undecided(b)||(!folded&&!canAfford(b.ante*2)))return;
+  const b=box();if(state.busy||state.phase!=='playing'||!undecided(b)||b.pending.size||(!folded&&!canAfford(b.ante*2)))return;
   setBusy(true);b.selected.clear();b.status=folded?'folded':'bet';if(!folded){b.bet=b.ante*2;state.bankroll-=b.bet;}
-  const next=state.boxes.findIndex(undecided);
+  releaseExchanges();
+  const decision=state.boxes.findIndex(b=>b.status==='decision');
+  const next=decision>=0?decision:state.boxes.findIndex(undecided);
   if(next>=0){state.active=next;renderCards();setBusy(false);msg('Box '+b.id+(folded?' folded.':' bet placed.')+' Your move: Box '+box().id+'.');$('boxStack').querySelector('[data-box="'+next+'"]').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'nearest'});return;}
   renderCards();msg('Dealer reveals…');
   [...el.dealerCards.children].forEach((node,i)=>setTimeout(()=>node.classList.remove('face-down'),i*75));
@@ -453,7 +463,7 @@
  el.deal.onclick=deal;$('resetBankBtn').onclick=()=>{if(state.busy||state.phase!=='betting')return;state.bankroll=1000;renderCards();msg('Bankroll reset to 1,000.');};
  ['foldBtn','foldAfterBtn'].forEach(id=>$(id).onclick=()=>decide(true));['betBtn','betAfterBtn'].forEach(id=>$(id).onclick=()=>decide(false));
  el.draw.onclick=()=>modify(false);$('sixthBtn').onclick=()=>modify(true);
- ['sortBtn','sortAfterBtn'].forEach(id=>$(id).onclick=()=>{if(state.busy||!undecided(box()))return;box().hand.sort((a,b)=>b.rank-a.rank||a.suit.localeCompare(b.suit));box().selected.clear();renderCards();});
+ ['sortBtn','sortAfterBtn'].forEach(id=>$(id).onclick=()=>{if(state.busy||!undecided(box())||box().pending.size)return;box().hand.sort((a,b)=>b.rank-a.rank||a.suit.localeCompare(b.suit));box().selected.clear();renderCards();});
  $('clearBtn').onclick=()=>{if(state.busy||!undecided(box()))return;box().selected.clear();renderCards();};$('newHandBtn').onclick=newHand;
  renderCards();$('boxChoice').querySelector('button').focus();
 })();

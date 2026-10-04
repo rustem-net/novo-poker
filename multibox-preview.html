@@ -33,11 +33,11 @@
   .card.face-down .card-inner{transform:rotateY(180deg)}
   .face{position:absolute;inset:0;border-radius:8px;backface-visibility:hidden;box-shadow:0 4px 10px rgba(0,0,0,.24);overflow:hidden}
   .front{background:linear-gradient(145deg,#fff,#f2efe7);color:var(--ink);border:1px solid #d8d4ca;display:grid;place-items:center;padding:5px}
-  /* Four-colour poker deck: each suit has its own colour. */
+  /* Traditional two-colour deck. */
   .front.suit-S{color:#111418}
   .front.suit-H{color:#c62828}
-  .front.suit-D{color:#1565c0}
-  .front.suit-C{color:#218c4f}
+  .front.suit-D{color:#c62828}
+  .front.suit-C{color:#111418}
   .rank{font-size:clamp(25px,7.5vw,42px);line-height:1;font-weight:950;letter-spacing:-.04em}
   .suit-corner{position:absolute;top:5px;left:6px;font-size:clamp(15px,4.3vw,23px);line-height:1;font-weight:800}
   .suit-corner.bottom{top:auto;left:auto;right:6px;bottom:5px;transform:rotate(180deg)}
@@ -125,7 +125,7 @@
   .app.short-height details,.app.short-height .foot{display:none}
   @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
-  .app{max-width:540px;padding-bottom:12px}
+  .app{max-width:500px;padding-bottom:12px}
   .dealer,.app.compact-height .dealer,.app.short-height .dealer{min-height:0}
   .dealer .cards{min-height:0;padding:4px 2px 6px}
   .dealer .card{flex:0 1 48px}
@@ -141,8 +141,8 @@
   .box-status{font-size:10px;color:var(--muted);letter-spacing:.03em}
   .active .box-status{color:var(--gold2)}
   .box-row .cards,.app.compact-height .box-row .cards,.app.short-height .box-row .cards{min-height:0;padding:9px 0 6px;gap:7px}
-  .box-row .card,.app.compact-height .box-row .card,.app.short-height .box-row .card{flex:0 1 51px;width:51px}
-  .box-row .rank{font-size:28px}
+  .box-row .card,.app.compact-height .box-row .card,.app.short-height .box-row .card{flex:0 1 47px;width:47px}
+  .box-row .rank{font-size:26px}
   .box-row .suit-corner{font-size:15px;left:4px;top:4px}
   .box-row .suit-corner.bottom{left:auto;top:auto;right:4px;bottom:4px}
   .box-row .card.selected{transform:translateY(-5px)}

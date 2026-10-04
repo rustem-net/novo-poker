@@ -16,7 +16,7 @@ html = html.slice(0, panel) + `
   <p class="preview-note">Layout preview · Sample hands · Tap any unfinished box to play it</p>
 </main>`;
 html = html.replace('</style>', `
-  .app{max-width:540px;padding-bottom:12px}
+  .app{max-width:500px;padding-bottom:12px}
   .dealer,.app.compact-height .dealer,.app.short-height .dealer{min-height:0}
   .dealer .cards{min-height:0;padding:4px 2px 6px}
   .dealer .card{flex:0 1 48px}
@@ -32,8 +32,8 @@ html = html.replace('</style>', `
   .box-status{font-size:10px;color:var(--muted);letter-spacing:.03em}
   .active .box-status{color:var(--gold2)}
   .box-row .cards,.app.compact-height .box-row .cards,.app.short-height .box-row .cards{min-height:0;padding:9px 0 6px;gap:7px}
-  .box-row .card,.app.compact-height .box-row .card,.app.short-height .box-row .card{flex:0 1 51px;width:51px}
-  .box-row .rank{font-size:28px}
+  .box-row .card,.app.compact-height .box-row .card,.app.short-height .box-row .card{flex:0 1 47px;width:47px}
+  .box-row .rank{font-size:26px}
   .box-row .suit-corner{font-size:15px;left:4px;top:4px}
   .box-row .suit-corner.bottom{left:auto;top:auto;right:4px;bottom:4px}
   .box-row .card.selected{transform:translateY(-5px)}
