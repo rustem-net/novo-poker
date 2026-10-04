@@ -286,7 +286,7 @@
 (() => {
  'use strict';
  const $=id=>document.getElementById(id),root=$('app');
- const VERSION='v0.2';
+ const VERSION='v0.3';
  $('startupVersion').textContent=VERSION;
  $('appVersion').textContent=VERSION;
    const SUITS = [
@@ -371,7 +371,7 @@
 
    function cardHTML(c,down=false,selectable=false,selected=false,index=0){
     const classes=['card']; if(down) classes.push('face-down'); if(selectable) classes.push('selectable'); if(selected) classes.push('selected');
-    return `<button type="button" class="${classes.join(' ')}" data-index="${index}" ${selectable?'aria-label="Select '+c.label+c.symbol+' for draw"':'tabindex="-1"'}><span class="card-inner"><span class="face front suit-${c.suit}"><span class="suit-corner">${c.symbol}</span><span class="rank">${c.label}</span><span class="suit-corner bottom">${c.symbol}</span></span><span class="face back"></span></span></button>`;
+    return `<button type="button" class="${classes.join(' ')}" data-card-id="${c.id}" data-index="${index}" ${selectable?'aria-label="Select '+c.label+c.symbol+' for draw"':'tabindex="-1"'}><span class="card-inner"><span class="face front suit-${c.suit}"><span class="suit-corner">${c.symbol}</span><span class="rank">${c.label}</span><span class="suit-corner bottom">${c.symbol}</span></span><span class="face back"></span></span></button>`;
   }
 
 
@@ -447,9 +447,36 @@
   cards.sort((a,b)=>rank(b)-rank(a)||a.suit.localeCompare(b.suit));
  }
  function sortHand(b){sortCards(b.hand);b.selected.clear();}
- function releaseExchanges(){
+ async function animateReorder(update){
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const before=new Map();
+  if(!reduced)root.querySelectorAll('.card[data-card-id]').forEach(node=>before.set(node.dataset.cardId,node.getBoundingClientRect()));
+  update();renderCards();
+  if(reduced)return;
+  const jobs=[];
+  root.querySelectorAll('.card[data-card-id]').forEach(node=>{
+   const old=before.get(node.dataset.cardId);if(!old)return;
+   const rect=node.getBoundingClientRect(),dx=old.left-rect.left,dy=old.top-rect.top;
+   if(Math.abs(dx)<1&&Math.abs(dy)<1)return;
+   const anim=node.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'translate(0,0)'}],{duration:620,easing:'cubic-bezier(.22,.7,.25,1)'});
+   jobs.push(anim.finished.catch(()=>{}));
+  });
+  await Promise.all(jobs);
+ }
+ async function releaseExchanges(){
   if(state.boxes.some(b=>b.status==='decision'))return;
-  state.boxes.forEach(b=>{if(b.pending.size){b.pending.clear();b.originals.clear();sortHand(b);}});
+  const changed=state.boxes.filter(b=>b.pending.size);
+  if(!changed.length)return;
+  msg('Dealing replacement cards…');
+  for(const b of changed){
+   for(const index of [...b.pending].sort((a,b)=>a-b)){
+    b.pending.delete(index);b.originals.delete(index);renderCards();
+    const row=$('boxStack').querySelector('[data-box="'+state.boxes.indexOf(b)+'"]');
+    await animateDealIn(row.querySelector('.cards').children[index],0,360);
+   }
+  }
+  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)await sleep(240);
+  msg('Sorting hands…');await animateReorder(()=>changed.forEach(sortHand));
  }
  async function deal(){
   if(state.busy||state.phase!=='betting'||!canAfford(state.count*state.selectedAnte))return;
@@ -459,7 +486,9 @@
   state.phase='playing';renderCards();msg('Dealing…');
   const rows=[...$('boxStack').querySelectorAll('.cards')].map(row=>[...row.children]),dealer=[...el.dealerCards.children],jobs=[];let step=0;
   for(let i=0;i<5;i++){rows.forEach(row=>jobs.push(animateDealIn(row[i],step++*45,260)));jobs.push(animateDealIn(dealer[i],step++*45,260));}
-  await Promise.all(jobs);state.boxes.forEach(sortHand);renderCards();setBusy(false);msg('Choose a move for Box 1.');
+  await Promise.all(jobs);
+  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)await sleep(200);
+  msg('Sorting hands…');await animateReorder(()=>state.boxes.forEach(sortHand));setBusy(false);msg('Choose a move for Box 1.');
  }
  async function modify(sixth=false){
   const b=box();if(state.busy||state.phase!=='playing'||!undecided(b)||b.modified||!canAfford(b.ante)||(!sixth&&!b.selected.size))return;
@@ -468,7 +497,7 @@
   b.pending=new Set(indices);
   if(!sixth)indices.forEach(i=>b.originals.set(i,b.hand[i]));
   if(sixth)b.hand.push(state.deck.draw());else indices.forEach(i=>b.hand[i]=state.deck.draw());
-  b.selected.clear();releaseExchanges();
+  b.selected.clear();await releaseExchanges();
   const next=state.boxes.findIndex(b=>b.status==='decision');
   state.active=next>=0?next:state.boxes.findIndex(undecided);
   renderCards();setBusy(false);msg(next>=0?'Exchange queued. Choose a move for Box '+box().id+'.':'All replacement cards revealed. Bet or fold for Box '+box().id+'.');
@@ -476,13 +505,13 @@
  async function decide(folded){
   const b=box();if(state.busy||state.phase!=='playing'||!undecided(b)||b.pending.size||(!folded&&!canAfford(b.ante*2)))return;
   setBusy(true);b.selected.clear();b.status=folded?'folded':'bet';if(!folded){b.bet=b.ante*2;state.bankroll-=b.bet;}
-  releaseExchanges();
+  await releaseExchanges();
   const decision=state.boxes.findIndex(b=>b.status==='decision');
   const next=decision>=0?decision:state.boxes.findIndex(undecided);
   if(next>=0){state.active=next;renderCards();setBusy(false);msg('Box '+b.id+(folded?' folded.':' bet placed.')+' Your move: Box '+box().id+'.');$('boxStack').querySelector('[data-box="'+next+'"]').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'nearest'});return;}
   renderCards();msg('Dealer reveals…');
   [...el.dealerCards.children].forEach((node,i)=>setTimeout(()=>node.classList.remove('face-down'),i*75));
-  await sleep(500);resolveRound();setBusy(false);
+  await sleep(500);await animateReorder(resolveRound);setBusy(false);
  }
  function resolveRound(){
   if(state.phase!=='playing'||state.boxes.some(undecided))return;
@@ -514,7 +543,7 @@
  el.deal.onclick=deal;$('resetBankBtn').onclick=()=>{if(state.busy||state.phase!=='betting')return;state.bankroll=1000;renderCards();msg('Bankroll reset to 1,000.');};
  ['foldBtn','foldAfterBtn'].forEach(id=>$(id).onclick=()=>decide(true));['betBtn','betAfterBtn'].forEach(id=>$(id).onclick=()=>decide(false));
  el.draw.onclick=()=>modify(false);$('sixthBtn').onclick=()=>modify(true);
- ['sortBtn','sortAfterBtn'].forEach(id=>$(id).onclick=()=>{if(state.busy||!undecided(box())||box().pending.size)return;sortHand(box());renderCards();});
+ ['sortBtn','sortAfterBtn'].forEach(id=>$(id).onclick=async()=>{if(state.busy||!undecided(box())||box().pending.size)return;setBusy(true);await animateReorder(()=>sortHand(box()));setBusy(false);});
  $('clearBtn').onclick=()=>{if(state.busy||!undecided(box()))return;box().selected.clear();renderCards();};$('newHandBtn').onclick=newHand;
  $('rulesBtn').onclick=()=>$('rulesDialog').showModal();
  $('closeRulesBtn').onclick=()=>$('rulesDialog').close();
