@@ -2,8 +2,8 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const html=fs.readFileSync('index.html','utf8');
 let script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
 new vm.Script(script);
-script=script.replace(/\}\)\(\);\s*$/, 'globalThis.game={state,BoxState,deal,modify,decide,resolveRound,newHand,renderCards,bestHand,dealerQualifies,sortHand};})();');
-const node=()=>({children:[],style:{setProperty(){}},dataset:{},classList:{toggle(){},remove(){}},setAttribute(){},focus(){},scrollIntoView(){},addEventListener(){},querySelector(){return node();},querySelectorAll(){return [];}});
+script=script.replace(/\}\)\(\);\s*$/, 'globalThis.game={state,BoxState,deal,modify,decide,resolveRound,newHand,renderCards,bestHand,dealerQualifies,sortHand,insuranceMax};})();');
+const node=()=>({children:[],style:{setProperty(){}},dataset:{},classList:{toggle(){},remove(){}},setAttribute(){},focus(){},scrollIntoView(){},showModal(){this.open=true;},close(){this.open=false;},addEventListener(){},querySelector(){return node();},querySelectorAll(){return [];}});
 const pageIds=new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]));
 const elements={};const document={getElementById(id){assert(pageIds.has(id),'Missing HTML element: '+id);return elements[id]??=node();}};
 const cards=()=>Array.from({length:6},node);
@@ -67,6 +67,30 @@ async function main(){
  state.boxes.forEach((b,i)=>{b.ante=10;b.bet=i===0?0:20;b.fee=i===1?10:0;b.status=i===0?'folded':'bet';b.hand=hands[i].map(card);});
  resolveRound();assertSorted({hand:state.dealer});assert.equal(state.bankroll,240);assert.deepEqual(Array.from(state.boxes,b=>b.net),[-10,70,0]);resolveRound();assert.equal(state.bankroll,240);
  state.phase='playing';state.boxes[0].status='decision';state.active=0;state.bankroll=19;await decide(false);assert.equal(state.boxes[0].status,'decision');assert.equal(state.bankroll,19);
+ // Insurance eligibility, popup edits, commitment, settlement and reset.
+ const straight=['9S','8D','7C','6C','5H'].map(card);
+ const setups=()=>{state.count=1;state.active=0;state.phase='playing';state.busy=false;state.bankroll=990;state.roundStart=1000;state.dealer=['AS','KD','8H','4C','2D'].map(card);state.boxes=[new BoxState(1)];const b=state.boxes[0];b.ante=10;b.status='decision';b.hand=straight.slice();return b;};
+ for(const [dealerCodes,net,label] of [
+  [['QS','JD','8H','4C','2D'],30,'WON'],
+  [['AS','KD','8H','4C','2D'],60,'LOST'],
+  [['AS','AD','AH','KC','KD'],-30,'RETURNED'],
+  [['9H','8C','7D','6S','5C'],0,'RETURNED']
+ ]){
+  const b=setups();assert.equal(context.game.insuranceMax(b),40);
+  elements.insuranceBtn.onclick();assert.equal(elements.insuranceDialog.open,true);
+  elements.insuranceSlider.value=20;elements.insuranceOk.onclick();assert.equal(b.insurance,20);assert.equal(state.bankroll,990);
+  state.dealer=dealerCodes.map(card);await decide(false);
+  assert.equal(b.insurancePaid,20);assert.equal(b.net,net);assert.equal(state.bankroll,1000+net);assert(b.result.includes('INS '+label));
+  resolveRound();assert.equal(state.bankroll,1000+net);newHand();assert.equal(state.boxes[0].insurance,0);
+ }
+ let insured=setups();state.bankroll=39;assert.equal(context.game.insuranceMax(insured),10);state.bankroll=29;assert.equal(context.game.insuranceMax(insured),0);
+ state.bankroll=990;insured.pending.add(0);assert.equal(context.game.insuranceMax(insured),0);insured.pending.clear();insured.hand=['AS','AD','9H','4C','2D'].map(card);assert.equal(context.game.insuranceMax(insured),0);
+ insured=setups();elements.insuranceBtn.onclick();elements.insuranceSlider.value=20;elements.insuranceCancel.onclick();assert.equal(insured.insurance,0);
+ elements.insuranceBtn.onclick();elements.insuranceSlider.value=20;elements.insuranceOk.onclick();assert.equal(insured.insurance,20);elements.insuranceOff.onclick();assert.equal(insured.insurance,0);
+ insured.insurance=20;insured.selected.add(0);await modify();assert.equal(insured.insurance,0);
+ insured=setups();insured.insurance=20;state.bankroll=39;await decide(false);assert.equal(insured.status,'decision');assert.equal(state.bankroll,39);
+ insured=setups();insured.insurance=20;await decide(true);assert.equal(insured.insurancePaid,0);assert.equal(insured.net,-10);
+ console.log('Passed: insurance popup, eligibility, bankroll limits, all insurance outcomes, draw/fold cleanup and reset.');
  console.log('Passed: ace-low and ace-high sorting, automatic deal/draw sorting, pending exchange positions, 1–3 box dealing, unique cards, funds checks, settlement, and round reset.');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

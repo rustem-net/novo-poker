@@ -21,3 +21,5 @@ After all boxes finish their exchange decisions, replacement cards arrive one at
 The game fits the dynamic viewport height, dividing the available table space evenly between the chosen boxes. Dealer and controls stay compact; rules open with the header's question-mark button. In short landscape viewports, controls move beside the table.
 
 With Playwright available, run `node verify-layout.cjs` to check one, two, and three boxes at iPhone 12 Pro dimensions (390 × 844), shorter browser viewports, and landscape. It uses installed Chrome by default; set `LAYOUT_BROWSER=msedge` to use Edge.
+
+Insurance is optional per box for Three of a Kind or better. Open Insurance, select an amount with the popup slider in Ante-sized steps, and confirm with OK. Cancel leaves the selection unchanged; Remove clears it. Stakes range from one Ante to half the potential Bet winnings, limited by funds remaining after the required Bet. Insurance is deducted together with Bet, cleared by a draw or fold, and reset each round. Dealer no game pays insurance 1:1; a loss or tie returns it; a win against a qualifying dealer loses it.
